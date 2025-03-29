@@ -41,7 +41,7 @@ Khuyến khích học viên viết Gửi otp qua queue (Sử dụng rabbitmq ho�
       => Chỉ validate đúng định dạng 11 số, FE validate và tự chuyển định dạng gửi lên về đúng 11 số
 - OTP:
     - Gồm 6 chữ số random
-    - Thời hạn số 3p(180s)
+    - Thời hạn sống 3p(180s)
     - Gửi lại sau 120s
     - Mỗi ngày gửi tối đa 5 OTP
     - Mỗi phiên đăng ký, OTP được nhập sai tối đa 5 lần, nhập sai lần thứ 5 => xoá phiên giao dịch khách hàng đăng ký không thành công
@@ -136,35 +136,35 @@ sequenceDiagram
   Database-->>System: Thành công
   
   opt SĐT không tồn tại trong database
-  System-->>User: Thống báo lỗi số điện thoại chưa được đăng ký
+    System-->>User: Thống báo lỗi số điện thoại chưa được đăng ký
   end
   
   opt SĐT tồn tại trong database và đã được kích hoạt
-  System-->>User: Thống báo lỗi tài khoản đã được đăng ký
+    System-->>User: Thống báo lỗi tài khoản đã được đăng ký
   end
   
   System->>Redis: Lấy số lần gửi OTP trong ngày từ cache
   Redis-->>System: Thành công
   
   opt SĐT vượt quá số lần gửi OTP trong ngày
-  System-->>User: Thống báo lỗi vượt quá số lần gửi mã OTP trong ngày
+    System-->>User: Thống báo lỗi vượt quá số lần gửi mã OTP trong ngày
   end
   
   System->>Redis: Lấy thời gian có thể gửi lại OTP từ cache
   Redis-->>System: Thành công
   
   opt SĐT chưa đủ thời gian chờ sau mỗi lần gửi lại
-  System-->>User: Thống báo lỗi chưa đủ thời gian chờ gửi lại OTP
+    System-->>User: Thống báo lỗi chưa đủ thời gian chờ gửi lại OTP
   end
   
   System->>Redis: Lấy OTP cũ từ cache
   Redis-->>System: Thành công
   
   opt OTP cũ không có hoặc đã hết hạn
-  System->>System: Tạo lại mã OTP mới
-  
-  System->>Redis: Lưu OTP mới vào cache
-  Redis-->>System: Thành công
+    System->>System: Tạo lại mã OTP mới
+    
+    System->>Redis: Lưu OTP mới vào cache
+    Redis-->>System: Thành công
   end
   
   System->>Redis: Lưu thời gian có thể gửi lại và số lần gửi lại OTP tặng 1 vào cache
@@ -200,11 +200,11 @@ sequenceDiagram
   Database-->>System: Thành công
   
   opt SĐT không tồn tại trong database
-  System-->>User: Thống báo lỗi số điện thoại chưa được đăng ký
+    System-->>User: Thống báo lỗi số điện thoại chưa được đăng ký
   end
   
   opt SĐT tồn tại trong database và đã được kích hoạt
-  System-->>User: Thống báo lỗi tài khoản đã được đăng ký
+    System-->>User: Thống báo lỗi tài khoản đã được đăng ký
   end
   
   System->>System: Validate OTP
@@ -230,26 +230,24 @@ sequenceDiagram
   System->>Redis: Lấy số lần nhập sai OTP
   Redis-->>System: Thành công
   
-  opt Số lần nhập sai vượt quá số lần cho phép
-  
-  System->>Database: Xoá dữ liệu đăng ký trong database
-  Database-->>System: Thành công
-  
-  System->>Redis: Xoá OTP, thời gian có thể gửi lại, số lần gửi OTP trong ngày, số lần nhập sai OTP trong cache
-  Redis-->>System: Thành công
+  alt Số lần nhập sai vượt quá số lần cho phép
+    System->>Database: Xoá dữ liệu đăng ký trong database
+    Database-->>System: Thành công
+    
+    System->>Redis: Xoá OTP, thời gian có thể gửi lại, số lần gửi OTP trong ngày, số lần nhập sai OTP trong cache
+    Redis-->>System: Thành công
+  else
+    System->>Redis: Update số lần nhập sai OTP trong cache
+    Redis-->>System: Thành công 
   end
-  
-  System->>Redis: Update số lần nhập sai OTP trong cache
-  Redis-->>System: Thành công
-  
   System-->>User: Thông báo lỗi xác thực OTP
 ```
 
-4. API Thay Đổi Mật Khẩu Lần Đầu
+4. API Kích Hoạt Và Thay Đổi Mật Khẩu Lần Đầu
 
 ```mermaid
 ---
-title: API Thay Đổi Mật Khẩu Lần Đầu
+title: API Kích Hoạt Và Thay Đổi Mật Khẩu Lần Đầu
 ---
 sequenceDiagram
   participant User
@@ -269,24 +267,24 @@ sequenceDiagram
   Database-->>System: Thành công
   
   opt SĐT không tồn tại trong database
-  System-->>User: Thống báo lỗi số điện thoại chưa được đăng ký
+    System-->>User: Thống báo lỗi số điện thoại chưa được đăng ký
   end
   
   opt SĐT tồn tại trong database và đã được kích hoạt
-  System-->>User: Thống báo lỗi tài khoản đã được đăng ký
+    System-->>User: Thống báo lỗi tài khoản đã được đăng ký
   end
   
   System->>System: Validate Mật khẩu
   
   opt Mật khẩu không đúng định dạng
-  System-->>User: Thông báo lỗi mật khẩu không đúng định dạng
+    System-->>User: Thông báo lỗi mật khẩu không đúng định dạng
   end
   
   System->>Redis: Lấy token đổi mật khẩu trong cache
   Redis-->>System: Thành công
   
   opt Token đổi mật khẩu không trùng nhau
-  System-->>User: Thông báo lỗi xác thực token thay đổi mật khẩu
+    System-->>User: Thông báo lỗi xác thực token thay đổi mật khẩu
   end
   
   System->>Database: Cập nhật mật khẩu mới và trạng thái kích hoạt tài khoản trong database
@@ -296,4 +294,76 @@ sequenceDiagram
   Redis-->>System: Thành công
   
   System-->>User: Thông báo tài khoản đã đăng ký thành công
+```
+
+**Biểu đồ Flow**
+
+1. API Đăng Ký
+
+```mermaid
+---
+title: API Đăng Ký
+---
+flowchart
+    START([Bắt Đầu])-->1(1. Validate SDT đúng định dạng, không tồn tại trong database)-->C1{SĐT hợp lệ}
+    C1--NO-->END([Kết thúc])
+    C1--YES-->2(2. Lưu thông tin vào database)
+    2-->3(3. Tạo mã OTP, thời gian có thể gửi lại OTP, Số lâ gửi OTP trong ngày, Số lần nhập sai OTP)-->4(4. Lưu dữ liệu vào Cache)
+    4-->5(5. Tạo job gửi OTP về SĐT)-->END
+```
+
+2. API Gửi Lại OTP
+
+```mermaid
+---
+title: API Gửi Lại OTP
+---
+flowchart
+    START([Bắt Đầu])-->1(1. Validate SDT đúng định dạng, có bản ghi trong database với trạng thái chưa kích hoạt)-->C1{SĐT hợp lệ}
+    C1--NO-->END([Kết thúc])
+    C1--YES-->2(2. Check số lần gửi OTP trong ngày)-->C2{Chưa vượt quá 5 lần}
+    C2--No-->END([Kết thúc])
+    C2--YES-->3(3. So sánh thời gian có thể gửi lại OTP và thời gian hiện tại)-->C3{Thời gian hiện tại lớn hơn}
+    C3--No-->END([Kết thúc])
+    C3--YES-->4(4. Lấy OTP từ cache)-->5[5. Check tồn tại OTP]-->C4{OTP tồn tại}
+    C4--NO-->5.1(5.1. Tạo mã OTP mới)
+    5.1-->5.2(5.2. Lưu OTP vào Cache)
+    C4--YES-->6(6. Update thời gian có thể gửi lại và số lần gửi lại trong ngày vào cache)
+    5.2-->6
+    6-->7(7. Tạo job gửi OTP về SĐT)-->END
+```
+
+3. API Xác Thực OTP
+
+```mermaid
+---
+title: API Xác Thực OTP
+---
+flowchart
+    START([Bắt Đầu])-->1(1. Validate SDT đúng định dạng, có bản ghi trong database với trạng thái chưa kích hoạt)-->C1{SĐT hợp lệ}
+    C1--NO-->END([Kết thúc])
+    C1--YES-->2(2. Validate OTP)-->C2{đúng định dạng, còn hiệu lực, và trùng khớp }
+    C2--YES-->3.1(3. Tạo token đổi mật khẩu và lưu vào cache)
+    3.1-->END([Kết thúc])
+    C2--NO-->3.2(3. Kiểm tra số lần nhập sai OTP)-->C3{Vượt quá 5 lần}
+    C3--YES-->4.1(4. Xoá thông tin đăng ký trong database và thông tin OTP trong cache)-->END
+    C3--NO-->4.2(4. Update số lần nhập sai OTP)-->END
+```
+
+4. API Kích Hoạt Và Thay Đổi Mật Khẩu Lần Đầu
+
+```mermaid
+---
+title: API Kích Hoạt Và Thay Đổi Mật Khẩu Lần Đầu
+---
+flowchart
+    START([Bắt Đầu])-->1(1. Validate SDT đúng định dạng, có bản ghi trong database với trạng thái chưa kích hoạt)-->C1{SĐT hợp lệ}
+    C1--NO-->END([Kết thúc])
+    C1--YES-->2(2. Validate Password)-->C2{Password đúng định dạng}
+    C2--NO-->END([Kết thúc])
+    C2--YES-->3(3. Validate Token thay đổi Password)-->C3{Token thay đổi password trùng khớp}
+    C3--NO-->END([Kết thúc])
+    C3--YES-->4(4. Update password và trạng thái tài khoản đã kích hoạt)
+    4-->5(5. Xoá thông tin OTP trên cache)-->END
+    
 ```
