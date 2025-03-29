@@ -1,4 +1,4 @@
-Bài tập 1
+# Bài tập 1
 
 Một phần mềm muốn có tính năng đăng ký cho người dùng mới.
 Các thông tin để làm key xác thực người dùng:
@@ -19,7 +19,7 @@ Với mỗi OTP, khách được nhập sai tối đa 5 lần, nếu nhập sai 
 
   ---------------------------------------
 
-Yêu cầu :
+**Yêu cầu :**
 1. Học viên viết SRS
    - Sử dụng sequendiagram vẽ api foollow
    - Vẽ sơ đồ thực hiện.
@@ -29,3 +29,271 @@ Yêu cầu :
 
 
 Khuyến khích học viên viết Gửi otp qua queue (Sử dụng rabbitmq hoặc queue nào đó) . Viết 1 service chỉ để nghe xong chả lzi
+
+-----------------------------------------------------------------------
+
+**Tóm tắt:**
+- SĐT:
+    - 11 chữ số nếu bắt đầu bằng 84
+    - 12 chữ số nếu bắt đầu +84
+    - 10 chữ số nếu bắt đầu 0
+    - Khi lưu tự chuyển đổi về 11 chữ số và bắt đầu 84
+      => Chỉ validate đúng định dạng 11 số, FE validate và tự chuyển định dạng gửi lên về đúng 11 số
+- OTP:
+    - Gồm 6 chữ số random
+    - Thời hạn số 3p(180s)
+    - Gửi lại sau 120s
+    - Mỗi ngày gửi tối đa 5 OTP
+    - Mỗi phiên đăng ký, OTP được nhập sai tối đa 5 lần, nhập sai lần thứ 5 => xoá phiên giao dịch khách hàng đăng ký không thành công
+- Password:
+    - Có ít nhất 8 chữ số
+    - Ít nhất 1 chữ viết hoa
+    - Ít nhất 1 chữ viết thường
+    - Ít nhất 1 số
+    - Ít nhất 1 ký tự đặc biệt
+
+**Phân tích:**
+Các API cần triển khai:
+- API đăng ký => input là số điện thoại => output là OTP code
+Logic: check validate định dạng, kiểm tra số đt đã đăng ký chưa hoặc đang đăng ký không. Nếu có thì hiển thị thông báo, nếu không thì tạo cache lưu thông tin số điện thoại, mã OTP
+- API gửi lại mã OTP => input là số điện thoại => output là OTP code
+Logic: check validate tồn tại Sđt, check số lần gửi trong ngày hôm nay, check thời gian gửi gần nhất, check thời gian sống của otp, nếu hết hạn thì tạo lại và trả về
+- API xác thực OTP => input là mã số điện thoại và mã OTP => output: token để thay đổi mật khẩu
+Logic: check validate số điện thoại, check thời gian sống OTP, check đúng OTP, nếu không đúng OTP thì update lại số lần nhập sai, nếu đúng trả về token để thay đổi mk
+- API Thay đổi mật khẩu lần đầu => input là số điện thoại và token thay đổi mật khẩu => output: thông báo đăng ký thành công
+Logic: check token thay đổi mk, check validate password lưu thông tin xuống database
+
+**Biểu đồ Sequance**
+
+1. API Đăng Ký
+
+```mermaid
+---
+title: API Đăng Ký
+---
+sequenceDiagram
+    participant User
+    participant System
+    participant Database
+    participant Redis
+    participant Queue Service
+    
+    User->>System:Nhập số điện thoại
+
+    System->>System:Validate SĐT
+
+    opt SDT không đúng định dạng
+        System-->>User: Thống báo lỗi sai định dạng
+    end
+
+    System->>Database: Lấy dữ liệu database
+    Database-->>System: Thành công
+    
+    opt SĐT tồn tại trong database và chưa được kích hoạt
+    System-->>User: Thống báo lỗi số điện thoại đang chờ kích hoạt và chuyển hướng người dùng đến trang xác thực OTP
+    end
+    
+    opt SĐT tồn tại trong database và đã được kích hoạt
+    System-->>User: Thống báo lỗi tài khoản đã được đăng ký
+    end
+    
+    System->>Database: Lưu dữ liệu vào database
+    Database-->>System: Thành công
+    
+    System->>System: Tạo mã OTP, thời gian có thể gửi lại OTP, số lần gửi OTP trong ngày = 1, số lần nhập sai OTP = 0
+    
+    System->>Redis: Lưu mã OTP, thời gian có thể gửi lại, số lần gửi OTP trong ngày, số lần nhập sai OTP vào cache
+    Redis-->>System: Thành công
+    
+    System->>Queue Service: Tạo Job gửi OTP về số điện thoại đăng ký
+    Queue Service-->>System: Thành công.
+    
+    System-->>User: Thống báo thành công, OTP đã được gửi về SĐT
+```
+
+2. API Gửi Lại OTP
+
+```mermaid
+---
+title: Api Gửi Lại OTP
+---
+sequenceDiagram
+  participant User
+  participant System
+  participant Database
+  participant Redis
+  participant Queue Service
+
+  User->>System:Click gửi lại OTP
+
+  System->>System:Validate SĐT
+
+  opt SDT không đúng định dạng
+    System-->>User: Thống báo lỗi sai định dạng
+  end
+
+  System->>Database: Lấy dữ liệu database
+  Database-->>System: Thành công
+  
+  opt SĐT không tồn tại trong database
+  System-->>User: Thống báo lỗi số điện thoại chưa được đăng ký
+  end
+  
+  opt SĐT tồn tại trong database và đã được kích hoạt
+  System-->>User: Thống báo lỗi tài khoản đã được đăng ký
+  end
+  
+  System->>Redis: Lấy số lần gửi OTP trong ngày từ cache
+  Redis-->>System: Thành công
+  
+  opt SĐT vượt quá số lần gửi OTP trong ngày
+  System-->>User: Thống báo lỗi vượt quá số lần gửi mã OTP trong ngày
+  end
+  
+  System->>Redis: Lấy thời gian có thể gửi lại OTP từ cache
+  Redis-->>System: Thành công
+  
+  opt SĐT chưa đủ thời gian chờ sau mỗi lần gửi lại
+  System-->>User: Thống báo lỗi chưa đủ thời gian chờ gửi lại OTP
+  end
+  
+  System->>Redis: Lấy OTP cũ từ cache
+  Redis-->>System: Thành công
+  
+  opt OTP cũ không có hoặc đã hết hạn
+  System->>System: Tạo lại mã OTP mới
+  
+  System->>Redis: Lưu OTP mới vào cache
+  Redis-->>System: Thành công
+  end
+  
+  System->>Redis: Lưu thời gian có thể gửi lại và số lần gửi lại OTP tặng 1 vào cache
+  Redis-->>System: Thành công
+  
+  System->>Queue Service: Tạo Job gửi OTP về số điện thoại đăng ký
+  Queue Service-->>System: Thành công
+  
+  System-->>User: Thống báo thành công, OTP đã được gửi về SĐT
+```
+
+3. API Xác Thực OTP
+
+```mermaid
+---
+title: Api Xác thực OTP
+---
+sequenceDiagram
+  participant User
+  participant System
+  participant Database
+  participant Redis
+
+  User->>System: Nhập mã OTP và xác thực
+
+  System->>System:Validate SĐT
+
+  opt SDT không đúng định dạng
+    System-->>User: Thống báo lỗi sai định dạng
+  end
+
+  System->>Database: Lấy dữ liệu database
+  Database-->>System: Thành công
+  
+  opt SĐT không tồn tại trong database
+  System-->>User: Thống báo lỗi số điện thoại chưa được đăng ký
+  end
+  
+  opt SĐT tồn tại trong database và đã được kích hoạt
+  System-->>User: Thống báo lỗi tài khoản đã được đăng ký
+  end
+  
+  System->>System: Validate OTP
+  
+  opt OTP đúng định dạng
+    System->>Redis: Lấy OTP từ cache
+    Redis-->>System: Thành công
+    
+    opt OTP còn hiệu lực
+    System->>System: Kiểm tra mã OTP
+    
+      opt OTP trùng nhau
+      System->>System: Tạo token đổi mật khẩu
+      
+      System->>Redis: Lưu token đổi mật khẩu vào cache
+      Redis-->>System: Thành công
+      
+      System-->>User: Thông báo xác thực OTP thành công, trả lại token đổi mật khẩu
+      end
+    end
+  end
+  
+  System->>Redis: Lấy số lần nhập sai OTP
+  Redis-->>System: Thành công
+  
+  opt Số lần nhập sai vượt quá số lần cho phép
+  
+  System->>Database: Xoá dữ liệu đăng ký trong database
+  Database-->>System: Thành công
+  
+  System->>Redis: Xoá OTP, thời gian có thể gửi lại, số lần gửi OTP trong ngày, số lần nhập sai OTP trong cache
+  Redis-->>System: Thành công
+  end
+  
+  System->>Redis: Update số lần nhập sai OTP trong cache
+  Redis-->>System: Thành công
+  
+  System-->>User: Thông báo lỗi xác thực OTP
+```
+
+4. API Thay Đổi Mật Khẩu Lần Đầu
+
+```mermaid
+---
+title: API Thay Đổi Mật Khẩu Lần Đầu
+---
+sequenceDiagram
+  participant User
+  participant System
+  participant Database
+  participant Redis
+
+  User->>System: Click link thay đổi mật khẩu và nhập mật khẩu mới
+
+  System->>System:Validate SĐT
+
+  opt SDT không đúng định dạng
+    System-->>User: Thống báo lỗi sai định dạng
+  end
+
+  System->>Database: Lấy dữ liệu database
+  Database-->>System: Thành công
+  
+  opt SĐT không tồn tại trong database
+  System-->>User: Thống báo lỗi số điện thoại chưa được đăng ký
+  end
+  
+  opt SĐT tồn tại trong database và đã được kích hoạt
+  System-->>User: Thống báo lỗi tài khoản đã được đăng ký
+  end
+  
+  System->>System: Validate Mật khẩu
+  
+  opt Mật khẩu không đúng định dạng
+  System-->>User: Thông báo lỗi mật khẩu không đúng định dạng
+  end
+  
+  System->>Redis: Lấy token đổi mật khẩu trong cache
+  Redis-->>System: Thành công
+  
+  opt Token đổi mật khẩu không trùng nhau
+  System-->>User: Thông báo lỗi xác thực token thay đổi mật khẩu
+  end
+  
+  System->>Database: Cập nhật mật khẩu mới và trạng thái kích hoạt tài khoản trong database
+  Database-->>System: Thành công
+  
+  System->>Redis: Xoá OTP, thời gian có thể gửi lại, số lần gửi OTP trong ngày, số lần nhập sai OTP trong cache
+  Redis-->>System: Thành công
+  
+  System-->>User: Thông báo tài khoản đã đăng ký thành công
+```
