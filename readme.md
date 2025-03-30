@@ -305,11 +305,11 @@ sequenceDiagram
 title: API Đăng Ký
 ---
 flowchart
-    START([Bắt Đầu])-->1(1. Validate SDT đúng định dạng, không tồn tại trong database)-->C1{SĐT hợp lệ}
+    START([Bắt Đầu])-->1(1.Validate SDT đúng định dạng, không tồn tại trong database)-->C1{SĐT hợp lệ}
     C1--NO-->END([Kết thúc])
-    C1--YES-->2(2. Lưu thông tin vào database)
-    2-->3(3. Tạo mã OTP, thời gian có thể gửi lại OTP, Số lâ gửi OTP trong ngày, Số lần nhập sai OTP)-->4(4. Lưu dữ liệu vào Cache)
-    4-->5(5. Tạo job gửi OTP về SĐT)-->END
+    C1--YES-->2(2.Lưu thông tin vào database)
+    2-->3(3.Tạo mã OTP, thời gian có thể gửi lại OTP, Số lâ gửi OTP trong ngày, Số lần nhập sai OTP)-->4(4.Lưu dữ liệu vào Cache)
+    4-->5(5.Tạo job gửi OTP về SĐT)-->END
 ```
 
 2. API Gửi Lại OTP
@@ -319,18 +319,18 @@ flowchart
 title: API Gửi Lại OTP
 ---
 flowchart
-    START([Bắt Đầu])-->1(1. Validate SDT đúng định dạng, có bản ghi trong database với trạng thái chưa kích hoạt)-->C1{SĐT hợp lệ}
+    START([Bắt Đầu])-->1(1.Validate SDT đúng định dạng, có bản ghi trong database với trạng thái chưa kích hoạt)-->C1{SĐT hợp lệ}
     C1--NO-->END([Kết thúc])
-    C1--YES-->2(2. Check số lần gửi OTP trong ngày)-->C2{Chưa vượt quá 5 lần}
+    C1--YES-->2(2.Check số lần gửi OTP trong ngày)-->C2{Chưa vượt quá 5 lần}
     C2--No-->END([Kết thúc])
-    C2--YES-->3(3. So sánh thời gian có thể gửi lại OTP và thời gian hiện tại)-->C3{Thời gian hiện tại lớn hơn}
+    C2--YES-->3(3.So sánh thời gian có thể gửi lại OTP và thời gian hiện tại)-->C3{Thời gian hiện tại lớn hơn}
     C3--No-->END([Kết thúc])
-    C3--YES-->4(4. Lấy OTP từ cache)-->5[5. Check tồn tại OTP]-->C4{OTP tồn tại}
-    C4--NO-->5.1(5.1. Tạo mã OTP mới)
-    5.1-->5.2(5.2. Lưu OTP vào Cache)
-    C4--YES-->6(6. Update thời gian có thể gửi lại và số lần gửi lại trong ngày vào cache)
+    C3--YES-->4(4.Lấy OTP từ cache)-->5[5.Check tồn tại OTP]-->C4{OTP tồn tại}
+    C4--NO-->5.1(5.1.Tạo mã OTP mới)
+    5.1-->5.2(5.2.Lưu OTP vào Cache)
+    C4--YES-->6(6.Update thời gian có thể gửi lại và số lần gửi lại trong ngày vào cache)
     5.2-->6
-    6-->7(7. Tạo job gửi OTP về SĐT)-->END
+    6-->7(7.Tạo job gửi OTP về SĐT)-->END
 ```
 
 3. API Xác Thực OTP
@@ -340,14 +340,14 @@ flowchart
 title: API Xác Thực OTP
 ---
 flowchart
-    START([Bắt Đầu])-->1(1. Validate SDT đúng định dạng, có bản ghi trong database với trạng thái chưa kích hoạt)-->C1{SĐT hợp lệ}
+    START([Bắt Đầu])-->1(1.Validate SDT đúng định dạng, có bản ghi trong database với trạng thái chưa kích hoạt)-->C1{SĐT hợp lệ}
     C1--NO-->END([Kết thúc])
-    C1--YES-->2(2. Validate OTP)-->C2{đúng định dạng, còn hiệu lực, và trùng khớp }
-    C2--YES-->3.1(3. Tạo token đổi mật khẩu và lưu vào cache)
+    C1--YES-->2(2.Validate OTP)-->C2{đúng định dạng, còn hiệu lực, và trùng khớp }
+    C2--YES-->3.1(3.Tạo token đổi mật khẩu và lưu vào cache)
     3.1-->END([Kết thúc])
-    C2--NO-->3.2(3. Kiểm tra số lần nhập sai OTP)-->C3{Vượt quá 5 lần}
-    C3--YES-->4.1(4. Xoá thông tin đăng ký trong database và thông tin OTP trong cache)-->END
-    C3--NO-->4.2(4. Update số lần nhập sai OTP)-->END
+    C2--NO-->3.2(3.Kiểm tra số lần nhập sai OTP)-->C3{Vượt quá 5 lần}
+    C3--YES-->4.1(4.Xoá thông tin đăng ký trong database và thông tin OTP trong cache)-->END
+    C3--NO-->4.2(4.Update số lần nhập sai OTP)-->END
 ```
 
 4. API Kích Hoạt Và Thay Đổi Mật Khẩu Lần Đầu
@@ -357,13 +357,13 @@ flowchart
 title: API Kích Hoạt Và Thay Đổi Mật Khẩu Lần Đầu
 ---
 flowchart
-    START([Bắt Đầu])-->1(1. Validate SDT đúng định dạng, có bản ghi trong database với trạng thái chưa kích hoạt)-->C1{SĐT hợp lệ}
+    START([Bắt Đầu])-->1(1.Validate SDT đúng định dạng, có bản ghi trong database với trạng thái chưa kích hoạt)-->C1{SĐT hợp lệ}
     C1--NO-->END([Kết thúc])
-    C1--YES-->2(2. Validate Password)-->C2{Password đúng định dạng}
+    C1--YES-->2(2.Validate Password)-->C2{Password đúng định dạng}
     C2--NO-->END([Kết thúc])
-    C2--YES-->3(3. Validate Token thay đổi Password)-->C3{Token thay đổi password trùng khớp}
+    C2--YES-->3(3.Validate Token thay đổi Password)-->C3{Token thay đổi password trùng khớp}
     C3--NO-->END([Kết thúc])
-    C3--YES-->4(4. Update password và trạng thái tài khoản đã kích hoạt)
-    4-->5(5. Xoá thông tin OTP trên cache)-->END
+    C3--YES-->4(4.Update password và trạng thái tài khoản đã kích hoạt)
+    4-->5(5.Xoá thông tin OTP trên cache)-->END
     
 ```
